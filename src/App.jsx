@@ -4,70 +4,102 @@ import { useState, useEffect, useRef } from 'react';
 import { gsap } from "gsap";
 import MyGrid from "./utils/MyGrid";
 import { cube, plane } from "./utils/geometries.js";
-import { material } from "./utils/materials.js";
+import { material, planeMaterial } from "./utils/materials.js";
 
 export default function App() {
   const [isInFocus, setisInFocus] = useState(false);
 
   const cameraRef = useRef();
   const perspectiveCameraRef = useRef();
-  const target = useRef();
+  const controller = useRef();
   const cubeRefOne = useRef();
   const cubeRefTwo = useRef();
 
-  const { showGrid } = useControls("grid", { showGrid: false });
-  const { toggleCamera } = useControls("camera", { toggleCamera: true });
-
-  useEffect(() => {
-    if (cameraRef.current && target.current) {
-      cameraRef.current.lookAt(target.current.position);
+  const { showGrid } = useControls("grid", { showGrid: true });
+  const { toggleCamera, cameraRotationX, cameraRotationY, cameraRotationZ } = useControls("camera",
+    {
+      toggleCamera: false,
+      cameraRotationX: { value: 0, min: -Math.PI, max: Math.PI, step: 0.1, label: "X" },
+      cameraRotationY: { value: 0, min: -Math.PI, max: Math.PI, step: 0.1, label: "Y" },
+      cameraRotationZ: { value: 0, min: -Math.PI, max: Math.PI, step: 0.1, label: "Z" },
     }
-  }, [toggleCamera]);
+  );
 
   useEffect(() => {
+    if (cameraRef.current && controller.current) {
+      cameraRef.current.lookAt(controller.current.position);
+    }
+
     if (perspectiveCameraRef.current) {
       perspectiveCameraRef.current.lookAt(0, 0, 0);
     }
+
   }, [toggleCamera]);
 
-  function resetCamera() {
-    gsap.to(target.current.position, {
-      x: 0,
-      y: 0,
-      z: 0,
-      duration: 1
-    });
-
-    gsap.to(cameraRef.current, {
-      zoom: 100,
-      duration: 1,
-      onUpdate: () => {
-        cameraRef.current.updateProjectionMatrix();
-      }
-
-    })
-
-    setisInFocus(false);
-  }
-
-  function focusOnCubeOne(ref, zoom) {
-    if (!isInFocus && ref.current) {
-      console.log(ref.current)
-      gsap.to(target.current.position, {
+  function focus(ref, zoom) {
+    if (controller.current) {
+      gsap.to(controller.current.position, {
         x: ref.current.position.x,
         y: ref.current.position.y,
         z: ref.current.position.z,
+        ease: "power2.out",
         duration: 1
       });
+      gsap.to(controller.current.rotation, {
+        y: Math.PI * 0.5, duration: 1.5, ease: "power2.out",
+        onUpdate: () => {
+          cameraRef.current.updateProjectionMatrix();
+        }
+      })
 
       gsap.to(cameraRef.current, {
         zoom,
         duration: 1,
+        ease: "power2.out",
+
         onUpdate: () => {
           cameraRef.current.updateProjectionMatrix();
         }
       });
       setisInFocus(true);
+      return
+    }
+  }
+
+  function resetCamera() {
+    gsap.to(controller.current.position, {
+      x: 0,
+      y: 0,
+      z: 0,
+      duration: 1,
+      ease: "power2.out",
+
+    });
+
+    gsap.to(cameraRef.current, {
+      zoom: 100,
+      duration: 1,
+      ease: "power2.out",
+
+      onUpdate: () => {
+        cameraRef.current.updateProjectionMatrix();
+      }
+
+    })
+    gsap.to(controller.current.rotation, {
+      y: 0, duration: 1,
+      onUpdate: () => {
+        cameraRef.current.updateProjectionMatrix();
+      }
+    })
+
+    setisInFocus(false);
+    return
+  }
+
+  function handleFocus(ref, zoom) {
+    if (!isInFocus && ref.current) {
+      focus(ref, zoom)
     } else {
       resetCamera()
     }
@@ -76,7 +108,7 @@ export default function App() {
   return (
     <>
       {toggleCamera ? (
-        <group ref={target} position={[0, 0, 0]}>
+        <group ref={controller} position={[0, 0, 0]} rotation={[cameraRotationX, 0, cameraRotationZ]}>
           <OrthographicCamera
             ref={cameraRef}
             makeDefault
@@ -90,8 +122,9 @@ export default function App() {
       ) : (
         <PerspectiveCamera
           makeDefault
+          fov={10}
           ref={perspectiveCameraRef}
-          position={[10, 10, 10]}
+          position={[40, 40, 40]}
           near={0.1}
           far={1000}
         />
@@ -116,7 +149,7 @@ export default function App() {
 
       <mesh
         ref={cubeRefOne}
-        onClick={() => focusOnCubeOne(cubeRefOne, 200)}
+        onClick={() => handleFocus(cubeRefOne, 300)}
         material={material}
         castShadow
         geometry={cube}
@@ -125,18 +158,20 @@ export default function App() {
 
       <mesh
         ref={cubeRefTwo}
-        onClick={() => focusOnCubeOne(cubeRefTwo, 200)}
+        onClick={() => handleFocus(cubeRefTwo, 200)}
         castShadow
-        geometry={cube}
-        position={[-3, 0.5, -2]}
-      />
+        position={[-2, 1.5, -2]}
+        material={material}
+      >
+        <boxGeometry args={[1, 3, 1]} />
+      </mesh>
 
       <mesh
         receiveShadow
-        position={[1, 0.001, 0]}
+        position={[1, -0.001, 0]}
         rotation={[-Math.PI * 0.5, 0, 0]}
         scale={50}
-        material={material}
+        material={planeMaterial}
         geometry={plane}
       />
     </>
