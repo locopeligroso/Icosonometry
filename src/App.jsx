@@ -1,40 +1,60 @@
-import { OrthographicCamera, PerspectiveCamera, SoftShadows } from '@react-three/drei';
-import { useControls } from 'leva';
-import { useState, useEffect, useRef } from 'react';
-import { gsap } from "gsap";
-import MyGrid from "./utils/MyGrid";
-import { cube, plane } from "./utils/geometries.js";
-import { material, planeMaterial } from "./utils/materials.js";
+import {
+  OrthographicCamera,
+  PerspectiveCamera,
+  SoftShadows,
+} from "@react-three/drei"
+import { useControls } from "leva"
+import { useState, useEffect, useRef } from "react"
+import { gsap } from "gsap"
+import MyGrid from "./utils/MyGrid"
+import { cube, plane } from "./utils/geometries.js"
+import { material, planeMaterial, floorMaterial } from "./utils/materials.js"
 
 export default function App() {
-  const [isInFocus, setisInFocus] = useState(false);
+  const [isInFocus, setisInFocus] = useState(false)
 
-  const cameraRef = useRef();
-  const perspectiveCameraRef = useRef();
-  const controller = useRef();
-  const cubeRefOne = useRef();
-  const cubeRefTwo = useRef();
+  const cameraRef = useRef()
+  const perspectiveCameraRef = useRef()
+  const controller = useRef()
+  const cubeRefOne = useRef()
+  const cubeRefTwo = useRef()
 
-  const { showGrid } = useControls("grid", { showGrid: true });
-  const { toggleCamera, cameraRotationX, cameraRotationY, cameraRotationZ } = useControls("camera",
-    {
-      toggleCamera: false,
-      cameraRotationX: { value: 0, min: -Math.PI, max: Math.PI, step: 0.1, label: "X" },
-      cameraRotationY: { value: 0, min: -Math.PI, max: Math.PI, step: 0.1, label: "Y" },
-      cameraRotationZ: { value: 0, min: -Math.PI, max: Math.PI, step: 0.1, label: "Z" },
-    }
-  );
+  const { showGrid } = useControls("grid", { showGrid: true })
+  const { toggleCamera, cameraRotationX, cameraRotationY, cameraRotationZ } =
+    useControls("camera", {
+      toggleCamera: true,
+      cameraRotationX: {
+        value: 0,
+        min: -Math.PI,
+        max: Math.PI,
+        step: 0.1,
+        label: "X",
+      },
+      cameraRotationY: {
+        value: 0,
+        min: -Math.PI,
+        max: Math.PI,
+        step: 0.1,
+        label: "Y",
+      },
+      cameraRotationZ: {
+        value: 0,
+        min: -Math.PI,
+        max: Math.PI,
+        step: 0.1,
+        label: "Z",
+      },
+    })
 
   useEffect(() => {
     if (cameraRef.current && controller.current) {
-      cameraRef.current.lookAt(controller.current.position);
+      cameraRef.current.lookAt(controller.current.position)
     }
 
     if (perspectiveCameraRef.current) {
-      perspectiveCameraRef.current.lookAt(0, 0, 0);
+      perspectiveCameraRef.current.lookAt(0, 0, 0)
     }
-
-  }, [toggleCamera]);
+  }, [toggleCamera])
 
   function focus(ref, zoom) {
     if (controller.current) {
@@ -43,13 +63,15 @@ export default function App() {
         y: ref.current.position.y,
         z: ref.current.position.z,
         ease: "power2.out",
-        duration: 1
-      });
+        duration: 1,
+      })
       gsap.to(controller.current.rotation, {
-        y: Math.PI * 0.5, duration: 1.5, ease: "power2.out",
+        y: Math.PI * 0.5,
+        duration: 1.5,
+        ease: "power2.out",
         onUpdate: () => {
-          cameraRef.current.updateProjectionMatrix();
-        }
+          cameraRef.current.updateProjectionMatrix()
+        },
       })
 
       gsap.to(cameraRef.current, {
@@ -58,10 +80,10 @@ export default function App() {
         ease: "power2.out",
 
         onUpdate: () => {
-          cameraRef.current.updateProjectionMatrix();
-        }
-      });
-      setisInFocus(true);
+          cameraRef.current.updateProjectionMatrix()
+        },
+      })
+      setisInFocus(true)
       return
     }
   }
@@ -73,27 +95,26 @@ export default function App() {
       z: 0,
       duration: 1,
       ease: "power2.out",
-
-    });
+    })
 
     gsap.to(cameraRef.current, {
-      zoom: 100,
+      zoom: 75,
       duration: 1,
       ease: "power2.out",
 
       onUpdate: () => {
-        cameraRef.current.updateProjectionMatrix();
-      }
-
+        cameraRef.current.updateProjectionMatrix()
+      },
     })
     gsap.to(controller.current.rotation, {
-      y: 0, duration: 1,
+      y: 0,
+      duration: 1,
       onUpdate: () => {
-        cameraRef.current.updateProjectionMatrix();
-      }
+        cameraRef.current.updateProjectionMatrix()
+      },
     })
 
-    setisInFocus(false);
+    setisInFocus(false)
     return
   }
 
@@ -108,11 +129,15 @@ export default function App() {
   return (
     <>
       {toggleCamera ? (
-        <group ref={controller} position={[0, 0, 0]} rotation={[cameraRotationX, 0, cameraRotationZ]}>
+        <group
+          ref={controller}
+          position={[0, 0, 0]}
+          rotation={[cameraRotationX, 0, cameraRotationZ]}
+        >
           <OrthographicCamera
             ref={cameraRef}
             makeDefault
-            zoom={100}
+            zoom={75}
             position={[10, 10, 10]}
             rotation={[-Math.PI / 6, Math.PI / 6, 0]}
             near={0.1}
@@ -160,21 +185,38 @@ export default function App() {
         ref={cubeRefTwo}
         onClick={() => handleFocus(cubeRefTwo, 200)}
         castShadow
-        position={[-2, 1.5, -2]}
+        position={[-2, 1, -2]}
         material={material}
       >
-        <boxGeometry args={[1, 3, 1]} />
+        <boxGeometry args={[1, 2, 1]} />
       </mesh>
 
       <mesh
         receiveShadow
-        position={[1, -0.001, 0]}
+        position={[-15, -0.001, 0]}
         rotation={[-Math.PI * 0.5, 0, 0]}
-        scale={50}
+        scale={20}
+        material={planeMaterial}
+        geometry={plane}
+      />
+
+      {/*
+      <mesh
+        receiveShadow
+        position={[2.5, -0.001, 0]}
+        rotation={[-Math.PI * 0.5, 0, 0]}
+        scale={[15, 30, 20]}
+        material={floorMaterial}
+        geometry={plane}
+      /> */}
+      <mesh
+        receiveShadow
+        position={[20, -0.001, 0]}
+        rotation={[-Math.PI * 0.5, 0, 0]}
+        scale={20}
         material={planeMaterial}
         geometry={plane}
       />
     </>
   )
 }
-
